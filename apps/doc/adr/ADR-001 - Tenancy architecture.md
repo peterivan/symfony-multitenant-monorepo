@@ -14,26 +14,28 @@ migrations, and audit logging use this layer but remain separate application ser
 
 The default tenant model is database-per-tenant:
 
-* one shared Symfony application
-* one central PostgreSQL database for tenant registry, routing, provisioning, operator, and
+* one shared codebase and deployment artifact
+* one central PostgreSQL database for tenant registry, routing, provisioning, platform operators, and
   deployment metadata
 * one PostgreSQL database per tenant for tenant-owned application data
-* separate Doctrine connections, entity managers, mapping boundaries, and repository namespaces for
-  central data and tenant-scoped data
+* separate Doctrine connections, entity managers, and mapping boundaries for central data and
+  tenant-scoped data
 
 HTTP tenant resolution defaults to subdomains, but tenant resolution must be extensible. Custom
 resolvers are allowed for application-specific requirements. Resolver order is defined by
-configuration, and application startup must fail when resolver ordering is ambiguous. Every resolver
-must resolve to no tenant or to a stable tenant identifier used to load tenant metadata.
+configuration, and application startup must fail when resolver behavior is ambiguous or invalid.
+Every resolver must resolve to no tenant or to a stable tenant identifier used to load tenant
+metadata.
 
-Tenant context is required before tenant-scoped data access. It must be initialized for each
-execution unit and cleared when that unit ends, including failure cases. Execution units include HTTP
-requests, console command invocations, message handling attempts, scheduled job runs, and other
+Tenant context is required before tenant-scoped data access. It must be explicitly initialized for
+each execution unit and cleared when that unit ends, including failure cases. Execution units include
+HTTP requests, console command invocations, message handling attempts, scheduled job runs, and other
 isolated units of application work. The tenancy layer is the only component allowed to create,
 replace, or clear active tenant context.
 
-Tenant context must be explicitly established for each execution unit. It must not be implicitly
-inherited across process boundaries.
+Tenant context must not be implicitly inherited across process boundaries. Async boundaries such as
+Messenger messages, queues, and scheduled jobs must strip active tenant context by default and
+re-establish tenant context only from explicit routing metadata, job attributes, or command options.
 
 The application will not depend on a third-party package as the owner of tenant resolution, context
 lifecycle, or database selection.
@@ -62,7 +64,13 @@ Central and tenant code must remain separated unless a component is explicitly d
 structured as shared code. Central and tenant Doctrine access must remain distinguishable in
 configuration and code. Tenant database selection must happen before tenant EntityManager or
 connection use; tenant-scoped access must not fall back to the central database, a default tenant, or
-stale tenant context.
+stale tenant context. Tenant-scoped data access must be mediated by the active tenant context and
+tenancy infrastructure.
+
+Tenant-scoped execution must release tenant Doctrine resources when the execution unit ends.
+
+Shared caches, session storage, file/object storage, and other shared infrastructure must be
+tenant-namespaced or routed per tenant whenever they contain tenant-scoped data.
 
 The tenancy model supports three isolation tiers:
 
@@ -71,12 +79,12 @@ The tenancy model supports three isolation tiers:
 * Dedicated DB Infrastructure: shared application deployment with selected tenant databases on
   dedicated PostgreSQL server instances
 * Dedicated Application Deployment: fully dedicated application deployment for selected tenants,
-  including on-premise deployment
+  including isolated runtime instances and on-premise deployment
 
 In shared deployments, the central database is the source of truth for tenant registry and routing
-metadata. Dedicated and on-premise deployments use their own central database unless explicitly
-integrated with the shared platform registry. All tiers must preserve the same central-vs-tenant data
-ownership rules.
+metadata. Dedicated and on-premise deployments either use their own central database without registry
+synchronization, or integrate with the shared platform registry through an explicit federation
+mechanism. All tiers must preserve the same central-vs-tenant data ownership rules.
 
 ## Why
 
@@ -100,11 +108,11 @@ behavior can be verified before deployment.
 ## Non-Goals
 
 This ADR does not decide cross-tenant reporting optimization, global identity management,
-multi-region tenant placement, automatic tenant sharding, or tenant federation.
+multi-region tenant placement, automatic tenant sharding, or tenant federation implementation.
 
 ## Consequences
 
-* Tenant-scoped access must fail closed when tenant context is missing, inactive, unresolved, or
+* Tenant-scoped access must fail closed when tenant context is missing, unresolved, inactive, or
   cannot be initialized.
 * Tenant provisioning must create or register a tenant database, run tenant migrations, seed required
   tenant baseline data, and activate the tenant only after its database is initialized.
@@ -112,12 +120,15 @@ multi-region tenant placement, automatic tenant sharding, or tenant federation.
   only the database name. If runtime metadata changes are introduced, cache invalidation and stale
   metadata handling must be implemented.
 * Tenant migrations are separate from central migrations and must be runnable for one tenant, all
-  tenants, and newly provisioned tenants.
-* CLI commands, workers, and background jobs must declare whether they run in central context, one
-  tenant context, or across tenants through explicit APIs, attributes, or configuration.
+  tenants, and newly provisioned tenants. Migration orchestration must track tenant migration state.
+* CLI commands, workers, and background jobs must declare whether they run in central context, a
+  single tenant context, or across tenants through explicit APIs, attributes, or configuration.
 * Cross-tenant analytics, support tooling, imports, exports, and maintenance jobs must record audit
   data identifying the selected tenant, initiator, operation, and tenant-owned data scope accessed or
   changed.
+* Audit logs, error traces, and platform telemetry are cross-tenant infrastructure. They live in
+  central storage and must minimize tenant business data and PII, storing only what is required for
+  operational, compliance, security, or support purposes.
 * Cross-tenant execution must establish and dispose tenant context per tenant iteration, including
   failure paths.
 * Operations spanning central and tenant databases must not assume atomic cross-database
@@ -132,8 +143,3 @@ Revisit this decision if tenant count makes database-per-tenant operations diffi
 cross-tenant reporting becomes a primary product capability, tenant database provisioning becomes too
 expensive to operate, dedicated deployments become the default operating model, or a Symfony/Doctrine
 tenancy package proves simpler while preserving the same explicit boundaries.
-
-## References
-
-* [ADR-002: Back Office](ADR-002-Back-Office.md)
-* [ADR-003: Tenant Workspace](ADR-003-Tenant-workspace.md)
