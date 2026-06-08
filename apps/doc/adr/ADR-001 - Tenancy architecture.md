@@ -6,6 +6,12 @@ Accepted
 
 Date: 2026-06-08
 
+## Owner
+
+The tenancy boundary owns this decision. Doctrine configuration, tenant resolution, tenant context,
+provisioning, migrations, audit logging, background execution, and tenant-aware infrastructure must
+integrate with that boundary instead of redefining tenant ownership or context rules.
+
 ## Decision
 
 The application will implement its own tenancy layer for Symfony and Doctrine. The tenancy layer owns
@@ -38,7 +44,8 @@ Messenger messages, queues, and scheduled jobs must strip active tenant context 
 re-establish tenant context only from explicit routing metadata, job attributes, or command options.
 
 The application will not depend on a third-party package as the owner of tenant resolution, context
-lifecycle, or database selection.
+lifecycle, or database selection. Replacing this ownership with a third-party package requires a
+superseding ADR.
 
 The central database stores tenant registry, tenant domains, tenant database location, provisioning
 state, platform operators, and other cross-tenant infrastructure metadata. Tenant databases store
@@ -66,11 +73,6 @@ configuration and code. Tenant database selection must happen before tenant Enti
 connection use; tenant-scoped access must not fall back to the central database, a default tenant, or
 stale tenant context. Tenant-scoped data access must be mediated by the active tenant context and
 tenancy infrastructure.
-
-Tenant-scoped execution must release tenant Doctrine resources when the execution unit ends.
-
-Shared caches, session storage, file/object storage, and other shared infrastructure must be
-tenant-namespaced or routed per tenant whenever they contain tenant-scoped data.
 
 The tenancy model supports three isolation tiers:
 
@@ -105,12 +107,7 @@ application needs by default.
 Local development must use the same tenancy model as the application so central and tenant database
 behavior can be verified before deployment.
 
-## Non-Goals
-
-This ADR does not decide cross-tenant reporting optimization, global identity management,
-multi-region tenant placement, automatic tenant sharding, or tenant federation implementation.
-
-## Consequences
+## Consequences And Invariants
 
 * Tenant-scoped access must fail closed when tenant context is missing, unresolved, inactive, or
   cannot be initialized.
@@ -131,11 +128,29 @@ multi-region tenant placement, automatic tenant sharding, or tenant federation i
   operational, compliance, security, or support purposes.
 * Cross-tenant execution must establish and dispose tenant context per tenant iteration, including
   failure paths.
+* Tenant-scoped execution must release tenant Doctrine resources when the execution unit ends.
+* Shared caches, session storage, file/object storage, and other shared infrastructure must be
+  tenant-namespaced or routed per tenant whenever they contain tenant-scoped data.
 * Operations spanning central and tenant databases must not assume atomic cross-database
   transactions.
+* This ADR does not decide cross-tenant reporting optimization, global identity management,
+  multi-region tenant placement, automatic tenant sharding, or tenant federation implementation.
+
+## Validation
+
+Important invariants should be enforced through focused tests, static analysis where practical, and
+explicit code review checks for tenant boundary changes.
+
+Expected validation includes:
+
 * Tests must cover fail-closed tenant access, deterministic resolver ordering, tenant context cleanup
   after success and failure, no context leakage in long-running processes, inactive tenant rejection,
   and separation between central and tenant Doctrine access paths.
+* Code review must reject tenant-scoped data access that bypasses the tenancy layer, silently falls
+  back to central storage, or relies on implicit tenant context.
+* Code review must reject shared cache, session, file, object storage, queue, or background execution
+  changes that carry tenant-scoped data without explicit tenant isolation or context propagation
+  rules.
 
 ## Revisit When
 

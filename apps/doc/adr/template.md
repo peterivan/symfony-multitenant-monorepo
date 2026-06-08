@@ -51,7 +51,7 @@ Describe the condition that would make this decision worth reconsidering.
 
 ## References
 
-References are optional.
+References are optional. Omit this section when there are no references.
 
 * Link to superseded or superseding ADRs when relevant.
 * Link related ADRs, dependent boundaries, or downstream design notes when they materially help trace
