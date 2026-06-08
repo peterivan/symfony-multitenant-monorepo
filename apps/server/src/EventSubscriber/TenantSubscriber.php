@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace App\EventSubscriber;
 
 use App\Tenant\TenantContext;
@@ -13,8 +15,7 @@ final class TenantSubscriber implements EventSubscriberInterface
     public function __construct(
         private readonly TenantResolver $tenantResolver,
         private readonly TenantContext $tenantContext,
-    ) {
-    }
+    ) {}
 
     public static function getSubscribedEvents(): array
     {

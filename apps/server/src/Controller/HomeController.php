@@ -1,11 +1,13 @@
 <?php
 
+declare(strict_types=1);
+
 namespace App\Controller;
 
 use App\Tenant\TenantContext;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
-use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\HttpFoundation\RequestStack;
+use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\Routing\Attribute\Route;
 
 final class HomeController extends AbstractController
@@ -16,10 +18,6 @@ final class HomeController extends AbstractController
         $tenantSlug = $tenantContext->getTenantSlug() ?? 'none';
         $host = $requestStack->getCurrentRequest()?->getHost() ?? 'unknown';
 
-        return new Response(sprintf(
-            "host: %s\ntenant: %s\n",
-            $host,
-            $tenantSlug,
-        ));
+        return new Response(sprintf("host: %s\ntenant: %s\n", $host, $tenantSlug));
     }
 }

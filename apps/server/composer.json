@@ -15,10 +15,14 @@
         "symfony/yaml": "8.1.*"
     },
     "require-dev": {
+        "carthage-software/mago": "*",
+        "pestphp/pest": "*",
+        "phpstan/phpstan": "*"
     },
     "config": {
         "allow-plugins": {
             "php-http/discovery": true,
+            "pestphp/pest-plugin": true,
             "symfony/flex": true,
             "symfony/runtime": true
         },
@@ -57,7 +61,44 @@
         ],
         "post-update-cmd": [
             "@auto-scripts"
-        ]
+        ],
+        "analyze": [
+            "@analyze:phpstan",
+            "@analyze:mago"
+        ],
+        "analyze:phpstan": "phpstan analyse --configuration=phpstan.neon --no-progress",
+        "analyze:mago": "mago analyze",
+        "lint": [
+            "@lint:mago"
+        ],
+        "lint:mago": "mago lint",
+        "format": "mago format",
+        "format:check": "mago format --check",
+        "test": [
+            "@test:pest"
+        ],
+        "test:pest": "pest",
+        "check": [
+            "@validate:composer",
+            "@lint",
+            "@format:check",
+            "@analyze",
+            "@test"
+        ],
+        "validate:composer": "composer validate --strict --no-check-publish"
+    },
+    "scripts-descriptions": {
+        "analyze": "Run all static analyzers.",
+        "analyze:phpstan": "Run PHPStan static analysis.",
+        "analyze:mago": "Run Mago static analysis.",
+        "lint": "Run all linters.",
+        "lint:mago": "Run Mago linter.",
+        "format": "Format PHP source with Mago.",
+        "format:check": "Check PHP source formatting with Mago.",
+        "test": "Run all tests.",
+        "test:pest": "Run Pest tests.",
+        "check": "Run the full project verification suite.",
+        "validate:composer": "Validate composer.json and composer.lock."
     },
     "conflict": {
         "symfony/symfony": "*"

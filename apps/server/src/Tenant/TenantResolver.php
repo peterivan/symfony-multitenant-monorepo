@@ -1,13 +1,14 @@
 <?php
 
+declare(strict_types=1);
+
 namespace App\Tenant;
 
 final class TenantResolver
 {
     public function __construct(
         private readonly string $tenantBaseDomain,
-    ) {
-    }
+    ) {}
 
     public function resolveFromHost(string $host): ?string
     {
@@ -18,13 +19,13 @@ final class TenantResolver
             return null;
         }
 
-        $suffix = '.'.$baseDomain;
+        $suffix = '.' . $baseDomain;
 
         if (!str_ends_with($host, $suffix)) {
             return null;
         }
 
-        $tenantSlug = substr($host, 0, -strlen($suffix));
+        $tenantSlug = substr($host, offset: 0, length: -strlen($suffix));
 
         if ('' === $tenantSlug) {
             return null;

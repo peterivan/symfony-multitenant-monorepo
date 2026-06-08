@@ -1,0 +1,20 @@
+version = "1.30.0"
+php-version = "8.5"
+
+[source]
+paths = ["src", "tests"]
+includes = ["vendor/symfony", "vendor/psr", "vendor/pestphp", "vendor/phpunit"]
+excludes = ["var"]
+
+[formatter]
+print-width = 120
+tab-width = 4
+use-tabs = false
+single-quote = true
+trailing-comma = true
+
+[linter]
+integrations = ["symfony"]
+
+[analyzer]
+minimum-fail-level = "error"
