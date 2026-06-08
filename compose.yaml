@@ -1,0 +1,52 @@
+services:
+  app:
+    build:
+      context: .
+      dockerfile: ops/Dockerfile
+    container_name: multitenant-app
+    ports:
+      - "43080:80"
+      - "43443:443"
+      - "43443:443/udp"
+    environment:
+      - APP_ENV=dev
+      - APP_DEBUG=1
+      - SERVER_NAME=:80
+      - DATABASE_URL=postgresql://root:root@database:5432/central?serverVersion=16&charset=utf8
+    depends_on:
+      database:
+        condition: service_healthy
+    volumes:
+      - ./apps/server:/app
+      - caddy_data:/data
+      - caddy_config:/config
+      - /etc/localtime:/etc/localtime:ro
+      - /etc/timezone:/etc/timezone:ro
+
+  database:
+    image: postgres:16-bookworm
+    container_name: multitenant-database
+    environment:
+      - POSTGRES_DB=central
+      - POSTGRES_USER=root
+      - POSTGRES_PASSWORD=root
+      - TZ=Europe/Bratislava
+      - POSTGRES_INITDB_ARGS=--locale-provider=icu --icu-locale=sk-SK
+    volumes:
+      - pg_data:/var/lib/postgresql/data
+      - ./ops/scripts/recreate.sh:/usr/local/bin/recreate:ro
+      - /etc/localtime:/etc/localtime:ro
+      - /etc/timezone:/etc/timezone:ro
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U $$POSTGRES_USER -d $$POSTGRES_DB"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+volumes:
+  pg_data:
+    name: pg_data
+  caddy_data:
+    name: caddy_data
+  caddy_config:
+    name: caddy_config
