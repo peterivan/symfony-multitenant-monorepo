@@ -141,4 +141,4 @@ tenant-embedded operational surface.
 
 ## References
 
-* [ADR-001: Tenancy Architecture](<ADR-001 - Tenancy architecture.md>)
+* [ADR-001: Tenancy Architecture](<ADR-001 - Tenancy Architecture.md>)

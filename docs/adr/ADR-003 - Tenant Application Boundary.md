@@ -8,9 +8,10 @@ Date: 2026-06-09
 
 ## Owner
 
-The tenant application boundary owns this decision. Tenant-facing routing, authentication,
-authorization, membership, navigation, tenant-local identity use, and tenant-facing workflows must
-integrate with this boundary instead of redefining where tenant-scoped application behavior belongs.
+This ADR governs tenant-facing runtime behavior in applications built on this tenancy foundation.
+Tenant-facing routing, authentication, authorization, membership, tenant-local identity use, and
+tenant-facing workflows must integrate with this boundary instead of redefining where tenant-scoped
+application behavior belongs.
 
 ## Decision
 
@@ -25,27 +26,29 @@ Tenant-facing routes must have an explicit tenant-facing route boundary. They mu
 resolved tenant context and must not be reachable as platform Back Office routes or central platform
 operation flows.
 
+This ADR defines the reusable tenant-facing runtime boundary for the multitenant foundation. Concrete
+tenant-facing URL structure, workspace naming, login flow, navigation, and product-specific tenant
+application areas are intentionally left to consuming applications or later project-specific ADRs,
+provided they preserve this boundary's tenant-context and authorization invariants.
+
 Tenant-facing authentication must resolve tenant context before identifying, authenticating, or
-authorizing a tenant-local user. Tenant-local identities, memberships, roles, and permissions apply
-only inside the owning tenant, as defined by ADR-001.
+authorizing a tenant-local user. Tenant-local identities, memberships, roles, and permissions follow
+ADR-001's tenant-local identity model.
 
 Tenant-local users, roles, memberships, and permissions must not grant platform-level operational
 capabilities or Back Office access. Platform-operator privileges must not be inherited from
 tenant-local identity, membership, role, or permission state.
 
-The same email address, login name, or person may participate in multiple tenants. Under ADR-001's
-tenant-local identity model, that participation is represented by tenant-local identity or membership
-state. Participation in one tenant does not imply participation, authorization, or identity
-continuity in another tenant.
+Participation in multiple tenants follows ADR-001's tenant-local identity model. Participation in
+one tenant does not imply participation, authorization, or identity continuity in another tenant.
 
 Tenant-facing self-service operations belong inside the tenant-facing application boundary only when
 they are initiated by tenant-local users, operate within one resolved tenant context, and are
 authorized by tenant-local rules. Self-service operations must not become implicit platform
 operations, cross-tenant operations, or Back Office workflows.
 
-Tenant-owned application data lives in tenant databases as defined by ADR-001. Central platform
-metadata, platform operators, tenant registry data, provisioning state, and other cross-tenant
-infrastructure data remain outside tenant-facing application ownership.
+Tenant-owned application data and central platform metadata follow ADR-001's central-vs-tenant data
+ownership rules. Tenant-facing application ownership must not redefine those storage boundaries.
 
 Shared cross-tenant application areas, federated tenant identity, global tenant-user identity, and
 organization-spanning authorization are outside the scope of this decision. Introducing any of those
@@ -72,31 +75,25 @@ deliberate global identity design.
 ## Consequences And Invariants
 
 * Tenant-facing application routes must have an explicit tenant-facing route boundary.
-* Tenant-facing application behavior operates in tenant context by default.
-* Tenant-facing routes require resolved tenant context before tenant-local authentication or
-  authorization.
-* Tenant-facing routes must fail closed when tenant context is missing, unresolved, inactive, or
-  ambiguous.
+* Tenant-facing routes require resolved tenant context before tenant-local authentication,
+  authorization, or tenant-owned data access.
+* Tenant-facing routes must fail closed when tenant context is missing, unresolved, inactive,
+  ambiguous, or cannot be established. Tenant-local authentication and authorization must not execute
+  in that state, and tenant-owned data must not be exposed.
 * Tenant-facing routes must not be registered as Back Office routes or central platform operation
   flows.
-* Tenant-local users, identities, memberships, roles, and permissions apply only within the owning
-  tenant.
 * Tenant-local users, identities, memberships, roles, and permissions must not grant Back Office
   access or platform-level operational capabilities.
 * Tenant-facing authentication, password reset, MFA, roles, and permissions follow ADR-001's
   tenant-local identity model unless a later ADR introduces a different identity model.
-* Under ADR-001's tenant-local identity model, a person participating in multiple tenants requires
-  tenant-local identity or membership state in each tenant.
 * Tenant-facing self-service operations must remain scoped to one resolved tenant and must not
   perform implicit cross-tenant, platform, or Back Office operations.
-* Cross-tenant access, inspection, reporting, synchronization, imports, exports, and operational
-  actions must not occur through tenant-facing implicit shared state.
-* Tenant imports and exports must explicitly define tenant scope.
 * Tenant-owned application data remains tenant-owned data and must not be stored in central storage
   unless ADR-001 or a later ADR explicitly defines the component as cross-tenant infrastructure.
-* This ADR does not define Back Office behavior, platform-operator authorization, tenant lifecycle
-  administration, global identity, tenant federation, cross-tenant collaboration, organization-level
-  authorization, audit architecture, or the concrete frontend build system.
+* Cross-tenant behavior must not be introduced through implicit tenant-facing shared state.
+* This ADR does not define concrete URL topology, product workspace structure, login experience,
+  global identity, tenant federation, cross-tenant collaboration, or organization-level
+  authorization.
 
 ## Validation
 
@@ -105,12 +102,12 @@ authorization tests, tenant-context tests, and code review for tenant-facing wor
 
 Expected validation includes:
 
-* Tests or route inspection must verify that tenant-facing application routes are exposed through the
-  defined tenant-facing route boundary.
+* The application must make tenant-facing routes distinguishable from Back Office and central
+  platform routes.
 * Tests or route inspection must verify that tenant-facing routes require tenant resolution and do
   not execute tenant-local authentication or authorization without resolved tenant context.
-* Tests must verify that tenant-facing routes fail closed when tenant context is missing, unresolved,
-  inactive, or ambiguous.
+* Tests must verify that tenant-facing routes fail closed without exposing tenant-owned data when
+  tenant context is missing, unresolved, inactive, ambiguous, or cannot be established.
 * Authorization tests must verify that tenant-local roles and permissions do not grant Back Office
   access or platform-level operational capabilities.
 * Tests must verify that tenant-local identity, membership, role, and permission checks are scoped to
@@ -121,12 +118,11 @@ Expected validation includes:
 
 ## Revisit When
 
-Revisit this decision if global user identity becomes a primary application requirement,
-organization-spanning authorization becomes necessary, tenant self-service expands into
-platform-delegated operations, cross-tenant collaboration becomes a core product capability, or the
-tenant-facing route boundary becomes unsuitable.
+Revisit this decision if the foundation must provide a concrete tenant-facing route topology, if a
+global or federated identity model replaces ADR-001's tenant-local identity model, or if
+tenant-facing features must intentionally span multiple tenants inside one user workflow.
 
 ## References
 
-* [ADR-001: Tenancy Architecture](<ADR-001 - Tenancy architecture.md>)
+* [ADR-001: Tenancy Architecture](<ADR-001 - Tenancy Architecture.md>)
 * [ADR-002: Back Office](<ADR-002 - Back Office.md>)
