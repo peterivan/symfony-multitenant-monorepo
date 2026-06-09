@@ -10,10 +10,11 @@ final class TenantResolver
         private readonly string $tenantBaseDomain,
     ) {}
 
+    #[\NoDiscard]
     public function resolveFromHost(string $host): ?string
     {
-        $host = strtolower($host);
-        $baseDomain = strtolower($this->tenantBaseDomain);
+        $host = $host |> strtolower(...);
+        $baseDomain = $this->tenantBaseDomain |> strtolower(...);
 
         if ('' === $host || $host === $baseDomain) {
             return null;

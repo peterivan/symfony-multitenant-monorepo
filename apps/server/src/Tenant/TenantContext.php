@@ -15,11 +15,13 @@ final class TenantContext implements ResetInterface
         $this->tenantSlug = $tenantSlug;
     }
 
+    #[\NoDiscard]
     public function getTenantSlug(): ?string
     {
         return $this->tenantSlug;
     }
 
+    #[\NoDiscard]
     public function hasTenant(): bool
     {
         return null !== $this->tenantSlug;
