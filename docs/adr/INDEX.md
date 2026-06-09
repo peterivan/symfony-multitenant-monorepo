@@ -8,6 +8,7 @@ This index is a navigation aid. An ADR's status is authoritative inside the ADR 
 * [ADR-002: Back Office](<ADR-002 - Back Office.md>)
 * [ADR-003: Tenant Application Boundary](<ADR-003 - Tenant Application Boundary.md>)
 * [ADR-004: Frontend Architecture and UI Foundation](<ADR-004 - Frontend Architecture and UI Foundation.md>)
+* [ADR-005: PostgreSQL Platform Standard](<ADR-005 - PostgreSQL Platform Standard.md>)
 
 ## Superseded ADRs
 

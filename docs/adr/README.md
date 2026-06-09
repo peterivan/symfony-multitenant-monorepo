@@ -16,14 +16,14 @@ Example:
 
 ### Active ADRs
 
-* ADR-001: Primary Data Ownership Boundary
-* ADR-002: Runtime Configuration Source
-* ADR-003: Authentication Boundary
+* ADR-101: Primary Data Ownership Boundary
+* ADR-102: Runtime Configuration Source
+* ADR-103: Authentication Boundary
 
 ### Superseded ADRs
 
-* ADR-004: Initial Module Boundary (Superseded by ADR-007)
-* ADR-005: Legacy Integration Contract (Superseded by ADR-008)
+* ADR-104: Initial Module Boundary (Superseded by ADR-107)
+* ADR-105: Legacy Integration Contract (Superseded by ADR-108)
 
 ## File Names
 
