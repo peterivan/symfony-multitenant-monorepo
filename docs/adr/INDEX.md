@@ -7,6 +7,7 @@ This index is a navigation aid. An ADR's status is authoritative inside the ADR 
 * [ADR-001: Tenancy Architecture](<ADR-001 - Tenancy Architecture.md>)
 * [ADR-002: Back Office](<ADR-002 - Back Office.md>)
 * [ADR-003: Tenant Application Boundary](<ADR-003 - Tenant Application Boundary.md>)
+* [ADR-004: Frontend Architecture and UI Foundation](<ADR-004 - Frontend Architecture and UI Foundation.md>)
 
 ## Superseded ADRs
 
