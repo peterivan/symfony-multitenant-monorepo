@@ -1,48 +1,85 @@
 # Project Glossary
 
-This glossary defines project terminology used in architecture, implementation, code review, and
-documentation. It is a vocabulary reference, not an architecture decision, implementation guide, user
-guide, or business-domain glossary.
+Project vocabulary for architecture, implementation, review, and documentation.
 
-| Term | Definition | Notes |
-| --- | --- | --- |
-| Authentication | Proving or establishing control of an identity within its architectural boundary. | Authentication is not authorization. Platform operators authenticate in central context. Tenant users authenticate inside a resolved tenant context. See also: Authorization, Authentication Boundary. |
-| Authentication Boundary | Boundary governing platform-operator authentication, tenant-user authentication, authentication state scope, identity-store selection, and integration with tenant resolution. | Platform and tenant authentication are separate concerns. Authentication must not silently fall back between central and tenant identity stores. |
-| Authentication State | State that records or represents an authenticated identity within an authentication boundary. | Platform authentication state is scoped to central Back Office access. Tenant authentication state is scoped to the tenant context for which the tenant user authenticated. |
-| Architectural Boundary | Durable ownership and responsibility line in the project. | Boundaries define which component or concern owns a decision and which other components must consume or integrate with it instead of redefining it. |
-| Authorization | Decision about what an authenticated identity may do within its boundary. | Authorization is separate from authentication. Tenant-local authorization must not grant Back Office access. Back Office access uses platform-operator authorization. See also: Authentication. |
-| Back Office | Central operational surface for platform-level operations, exposed at runtime under `/bo`. | Back Office is for platform operators. It is not part of tenant-facing application areas and must not host tenant business workflows. See also: Back Office Boundary, Platform Operator. |
-| Back Office Boundary | Architectural boundary for central platform operations, platform-operator access, Back Office routing, and tenant-impacting operational safeguards. | This is distinct from the Back Office application surface itself. The surface is where operators work; the boundary defines what belongs there and what must stay outside it. |
-| Central Context | Runtime execution without an active tenant context, used for central platform concerns. | Back Office starts in central context. Central registry operations run in central context. Central context must not be treated as a fallback for tenant-scoped execution. See also: Platform Context, Tenant Context. |
-| Central Database | Central PostgreSQL database storing tenant registry, routing metadata, provisioning state, platform operators, deployment metadata, and cross-tenant infrastructure metadata. | Central storage is not for tenant-owned business data unless the project explicitly defines the component as cross-tenant infrastructure. |
-| Central-Owned Data | Data owned by the central platform boundary rather than by an individual tenant. | Examples include tenant registry data, tenant routing metadata, platform operators, deployment metadata, and cross-tenant infrastructure metadata. |
-| Cross-Tenant Operation | Operation that acts across tenant boundaries or iterates through multiple tenants. | Cross-tenant operations require explicit safeguards. They must establish and dispose tenant context per tenant iteration when tenant context is needed. |
-| Database Foundation | Boundary that establishes PostgreSQL as the required database platform and rejects database portability as a project goal. | Schema design, indexing, query capabilities, database-side automation, auditing support, tenant database implementation, and PostgreSQL operational requirements integrate with this boundary. |
-| Database Portability | Goal of supporting multiple database engines or preserving theoretical compatibility with non-PostgreSQL databases. | Database portability is explicitly not a project goal. Doctrine usage must not prevent appropriate PostgreSQL feature adoption. |
-| Execution Unit | Isolated unit of application work that must explicitly initialize and clear tenant context when tenant-scoped work is performed. | Execution units include HTTP requests, console command invocations, message handling attempts, scheduled job runs, and similar isolated work. |
-| Frontend Foundation | Shared frontend foundation for application shells, shared packages, UI components, state management, workflow state machines, API integration, authentication integration, and tenant-context integration. | Back Office uses this foundation. Tenant-facing applications use it by default unless the project defines a replacement. The frontend foundation consumes backend tenant, identity, authentication, and authorization state. |
-| Identity | Architectural object representing a platform operator or tenant user within its owning boundary. | Identity is not a role, permission, session, tenant record, authentication mechanism, or authorization policy. Platform-operator identities and tenant-user identities are separate. |
-| Identity Boundary | Boundary owning platform-operator identity, tenant-user identity, and separation between central and tenant identity models. | The application does not use a central identity plus tenant membership model by default. |
-| Identity Store | Authoritative storage boundary used to load or verify identities for a specific authentication boundary. | Platform authentication uses central platform-owned identities. Tenant authentication uses the tenant identity store selected by the resolved tenant context. |
-| Platform Context | Central execution context for platform-owned operations that do not run as ordinary tenant-facing work. | Use this as a project vocabulary alias for central platform execution. It must not imply active tenant context. See also: Central Context, Platform Operation. |
-| Platform Operation | Explicit Back Office operation performed by a platform operator against central platform state, tenant lifecycle state, tenant infrastructure, or explicitly selected tenant-owned data. | Platform operations must not be silently converted into tenant-facing workflows or justified by tenant-local authorization. |
-| Platform Operator | Platform-owned identity that lives in central platform storage and accesses Back Office. | Platform operators are a central concern, not a tenant concern. Platform-operator identity must not be treated as tenant-user identity. See also: Back Office. |
-| PostgreSQL Platform Standard | Decision that PostgreSQL is the required database platform. | Central and tenant databases are PostgreSQL databases. PostgreSQL-specific capabilities may be used when appropriate. |
-| Shared Infrastructure | Infrastructure used across tenants or boundaries, such as shared caches, session storage, file/object storage, queues, audit logs, telemetry, or frontend packages. | Shared infrastructure must preserve tenant isolation when it contains or carries tenant-scoped data. Shared frontend infrastructure must not redefine backend tenancy, identity, authentication, or authorization boundaries. |
-| Tenant | Application tenant represented by central registry metadata and exactly one tenant database. | A tenant is an ownership concept. It is not tenant context. A tenant exists as platform metadata and tenant infrastructure; tenant context is the runtime selection of a tenant for an execution unit. See also: Tenant Context, Tenant Registry. |
-| Tenant Application | Tenant-facing application surface that operates inside the Tenant Application Boundary. | Do not use this term for Back Office or central platform operation surfaces. See also: Tenant User, Tenant Application Boundary. |
-| Tenant Application Boundary | Tenant-facing application boundary for tenant-scoped users, tenant-local identity use, authorization, configuration, data, and business workflows. | Tenant application boundaries run with explicit tenant context. Concrete URL topology, workspace naming, login experience, navigation, and product-specific application areas are project-specific unless the project defines them elsewhere. |
-| Tenant Context | Explicit runtime context that selects one tenant for tenant-scoped execution. | This is runtime state, not the tenant itself. Required before tenant-scoped data access and before tenant-local authentication, authorization, membership, or tenant-owned data access is evaluated. See also: Tenant, Tenant Resolution. |
-| Tenant Database | PostgreSQL database owned by exactly one tenant and used for tenant-owned application data. | Stores tenant-local identities, permissions, configuration, business data, and application workflows. Tenant-scoped data access must not fall back to the central database. |
-| Tenant Identifier | Globally unique, immutable identifier used to identify a tenant and load tenant metadata. | Tenant resolvers resolve to no tenant or to a stable tenant identifier. Tenant identifiers must be globally unique across shared and dedicated deployments. |
-| Tenant Lifecycle State | Central platform state describing whether a tenant is eligible for lifecycle-dependent behavior such as tenant-facing access. | The concrete model may evolve, but it must represent at least active, suspended, archived, and deleted states before those lifecycle operations are implemented. |
-| Tenancy Layer | Project component responsible for tenant resolution, tenant context lifecycle, and tenant database selection. | It owns tenant context initialization and cleanup for execution units. It is not authentication, authorization, or business workflow logic. See also: Tenant Resolution, Tenant Context, Tenant Database. |
-| Tenant Provisioning | Platform operation that creates or registers tenant infrastructure and prepares a tenant for activation. | Provisioning creates or registers a tenant database, runs tenant migrations, seeds required baseline data, and activates the tenant only after its database is initialized. |
-| Tenant Registry | Central platform metadata used to locate, route, provision, and manage tenants. | The tenant registry is central-owned data. It includes tenant metadata needed to find tenant databases and evaluate tenant lifecycle state. See also: Central Database, Tenant Identifier, Tenant Lifecycle State. |
-| Tenant Resolution | Process of resolving a request or execution context to no tenant or to a stable tenant identifier used to load tenant metadata. | HTTP tenant resolution defaults to subdomains but must be extensible. Tenant resolution must occur before tenant-user authentication is evaluated. |
-| Tenant User | Tenant-owned identity that lives in tenant storage and accesses tenant-facing application surfaces. | Tenant users are tenant concerns, not central platform identity concerns. The same email address may exist independently in multiple tenants. See also: Tenant Application, Tenant-Local. |
-| Tenant-Facing | Exposed to or used by tenant-scoped users inside a resolved tenant context. | Tenant-facing does not mean Back Office. Tenant-facing routes and workflows must remain separated from central platform operation flows. |
-| Tenant-Local | Owned by, scoped to, and evaluated inside one tenant boundary. | Tenant-local identities, roles, permissions, memberships, configuration, and workflow state do not grant Back Office access or platform-level operational capabilities. |
-| Tenant-Local Membership | Tenant-owned relationship, assignment, or participation record inside a tenant boundary. | Tenant-local membership is not central membership. The application does not use a central identity plus tenant membership model by default. |
-| Tenant-Owned Data | Data owned by an individual tenant and stored in that tenant's database unless the project explicitly defines a cross-tenant infrastructure exception. | Includes tenant-local identities, permissions, configuration, business data, and application workflows. |
-| Tenant-Scoped Execution | Execution that operates inside an active tenant context. | Must fail closed when tenant context is missing, unresolved, inactive, ambiguous, unavailable, or cannot be established. |
+This is not an ADR. Accepted ADRs remain the source of truth for architectural decisions.
+
+## Boundaries And Contexts
+
+| Term | Meaning |
+| --- | --- |
+| Architectural Boundary | Durable ownership line for a project concern. |
+| Back Office Boundary | Boundary for central platform operations and platform-operator access. |
+| Central Context | Runtime execution without an active tenant context. |
+| Database Foundation | Boundary that owns PostgreSQL as the project database platform. |
+| Frontend Foundation | Shared Vue, TypeScript, Vuetify, Pinia, XState, and Vite foundation. |
+| Identity Boundary | Boundary that keeps platform-operator and tenant-user identities separate. |
+| Platform Context | Central context when discussing Back Office or platform operations. |
+| Tenant Application Boundary | Boundary for tenant-facing users, authorization, configuration, data, and workflows. |
+
+## Tenancy
+
+| Term | Meaning |
+| --- | --- |
+| Back Office | Central operational surface for platform operators, exposed under `/bo`. |
+| Cross-Tenant Operation | Operation that acts across tenant boundaries or iterates through tenants. |
+| Database-per-Tenant | Tenancy model where each tenant owns a separate PostgreSQL database. |
+| Execution Unit | Isolated unit of work, such as a request, command, worker run, or job attempt. |
+| Fail Closed | Deny access or stop work when required tenant context cannot be proven. |
+| Platform Operation | Explicit Back Office operation performed by a platform operator. |
+| Tenant | Customer or organizational unit isolated by the platform and represented by central metadata and one tenant database. |
+| Tenant Application | Tenant-facing application surface inside the Tenant Application Boundary. |
+| Tenant Context | Runtime state selecting one tenant for tenant-scoped execution. |
+| Tenant Domain | Domain or host metadata used to route requests to a tenant. |
+| Tenant-Facing Route | Route exposed to tenant users and requiring tenant context. |
+| Tenant Identifier | Globally unique, immutable identifier used to load tenant metadata. |
+| Tenant Isolation | Separation that prevents tenant data, identity, context, or access from leaking across tenants. |
+| Tenant Lifecycle State | Central state describing whether tenant-facing access is allowed. |
+| Tenant Provisioning | Platform operation that creates or registers tenant infrastructure. |
+| Tenant Registry | Central metadata used to locate, route, provision, and manage tenants. |
+| Tenant Resolution | Process that resolves execution to no tenant or one tenant identifier. |
+| Tenant Resolver | Component that participates in tenant resolution. |
+| Tenant Scope | The selected tenant and data range for a tenant-impacting operation. |
+| Tenancy Layer | Component owning tenant resolution, context lifecycle, and database selection. |
+| Tenant-Scoped Execution | Runtime execution inside an active tenant context. |
+
+## Data And Infrastructure
+
+| Term | Meaning |
+| --- | --- |
+| Audit Record | Record of a security-sensitive or tenant-impacting operation. |
+| Central Database | PostgreSQL database for platform-owned metadata and infrastructure state. |
+| Central-Owned Data | Data owned by the central platform boundary. |
+| Cross-Tenant Infrastructure | Shared infrastructure that legitimately carries cross-tenant metadata or scoped data. |
+| Database Portability | Goal of supporting multiple database engines; not a project goal. |
+| Data Ownership | Rule that each data set belongs to either the central platform or one tenant. |
+| Identity Store | Storage location for identities used by one authentication boundary. |
+| PostgreSQL Platform Standard | Decision that central and tenant databases are PostgreSQL. |
+| Shared Infrastructure | Infrastructure used across tenants or boundaries. |
+| Tenant Database | PostgreSQL database owned by exactly one tenant. |
+| Tenant Migration | Schema or data migration applied to tenant databases separately from central migrations. |
+| Tenant-Owned Data | Data owned by an individual tenant. |
+
+## Identity, Authentication, And Authorization
+
+| Term | Meaning |
+| --- | --- |
+| Authentication | Proving control of an identity within its boundary. |
+| Authentication Boundary | Boundary that scopes authentication rules, state, and identity-store selection. |
+| Authentication State | State representing an authenticated identity within one authentication boundary. |
+| Authorization | Decision about what an authenticated identity may do. |
+| Identity | Project identity record for a platform operator or tenant user. |
+| Identity Attribute | Value such as email address or name used to describe an identity. |
+| Identity Model | Ownership model that defines where identities live and how they relate. |
+| Platform Authentication | Authentication of a platform operator for Back Office access. |
+| Platform Operator | Platform-owned identity that accesses Back Office. |
+| Tenant Authentication | Authentication of a tenant user inside resolved tenant context. |
+| Tenant User | Tenant-owned identity that accesses tenant-facing application surfaces. |
+
+## Tenant-Local Terms
+
+| Term | Meaning |
+| --- | --- |
+| Tenant-Facing | Exposed to or used by tenant-scoped users inside tenant context. |
+| Tenant-Local | Owned by, scoped to, and evaluated inside one tenant boundary. |
+| Tenant-Local Membership | Tenant-owned relationship or assignment inside one tenant boundary. |
