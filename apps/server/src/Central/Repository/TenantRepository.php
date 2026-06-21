@@ -16,7 +16,7 @@ use Doctrine\Persistence\ManagerRegistry;
  *
  * @extends ServiceEntityRepository<Tenant>
  */
-final class TenantRepository extends ServiceEntityRepository
+class TenantRepository extends ServiceEntityRepository
 {
     public function __construct(ManagerRegistry $registry)
     {

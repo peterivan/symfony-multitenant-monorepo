@@ -26,5 +26,16 @@ services:
         tags:
             - { name: kernel.reset, method: reset }
 
+    # Tenancy routing layer (ADR-001): release tenant Doctrine resources on worker
+    # reuse between requests, mirroring TenantContext.
+    App\Tenant\Connection\TenantEntityManagerProvider:
+        tags:
+            - { name: kernel.reset, method: reset }
+
+    # Tenancy ports → their default implementations.
+    App\Tenant\Registry\TenantRegistry: '@App\Tenant\Registry\DoctrineTenantRegistry'
+    App\Tenant\Connection\TenantConnectionFactory: '@App\Tenant\Connection\DoctrineTenantConnectionFactory'
+    App\Tenant\Credentials\TenantCredentialsResolver: '@App\Tenant\Credentials\EnvTenantCredentialsResolver'
+
     # add more service definitions when explicit configuration is needed
     # please note that last definitions always *replace* previous ones

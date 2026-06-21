@@ -7,6 +7,16 @@ doctrine:
                 server_version: '16'
                 charset: utf8
                 profiling_collect_backtrace: '%kernel.debug%'
+            # Template tenant connection. Its parameters are placeholders and are
+            # never used to connect: the tenancy routing layer builds the real
+            # per-tenant connection at runtime from registry location metadata.
+            # Defined only so a distinct, named tenant connection/EntityManager and
+            # their Doctrine configuration exist and stay separable from central.
+            tenant:
+                url: '%env(resolve:TENANT_DATABASE_URL)%'
+                server_version: '16'
+                charset: utf8
+                profiling_collect_backtrace: '%kernel.debug%'
     orm:
         default_entity_manager: central
         entity_managers:
@@ -24,6 +34,20 @@ doctrine:
                         dir: '%kernel.project_dir%/src/Central/Entity'
                         prefix: 'App\Central\Entity'
                         alias: Central
+            tenant:
+                connection: tenant
+                naming_strategy: doctrine.orm.naming_strategy.underscore
+                identity_generation_preferences:
+                    Doctrine\DBAL\Platforms\PostgreSQLPlatform: identity
+                validate_xml_mapping: true
+                auto_mapping: false
+                mappings:
+                    TenantEntity:
+                        type: attribute
+                        is_bundle: false
+                        dir: '%kernel.project_dir%/src/Tenant/Entity'
+                        prefix: 'App\Tenant\Entity'
+                        alias: Tenant
 
 when@test:
     doctrine:
