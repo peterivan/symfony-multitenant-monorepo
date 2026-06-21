@@ -3,7 +3,7 @@ php-version = "8.5"
 
 [source]
 paths = ["src", "tests"]
-includes = ["vendor/symfony", "vendor/psr", "vendor/pestphp", "vendor/phpunit"]
+includes = ["vendor/symfony", "vendor/psr", "vendor/pestphp", "vendor/phpunit", "vendor/doctrine"]
 excludes = ["var"]
 
 [formatter]
@@ -18,3 +18,6 @@ integrations = ["symfony"]
 
 [analyzer]
 minimum-fail-level = "error"
+# Pest's runtime DSL ($this binding, expect() chains) is opaque to static analysis;
+# tests are still linted and formatted, just not type-analyzed (mirrors phpstan's src-only scope).
+excludes = ["tests"]

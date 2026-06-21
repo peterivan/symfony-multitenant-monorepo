@@ -1,0 +1,54 @@
+doctrine:
+    dbal:
+        default_connection: central
+        connections:
+            central:
+                url: '%env(resolve:DATABASE_URL)%'
+                server_version: '16'
+                charset: utf8
+                profiling_collect_backtrace: '%kernel.debug%'
+    orm:
+        default_entity_manager: central
+        entity_managers:
+            central:
+                connection: central
+                naming_strategy: doctrine.orm.naming_strategy.underscore
+                identity_generation_preferences:
+                    Doctrine\DBAL\Platforms\PostgreSQLPlatform: identity
+                validate_xml_mapping: true
+                auto_mapping: false
+                mappings:
+                    CentralEntity:
+                        type: attribute
+                        is_bundle: false
+                        dir: '%kernel.project_dir%/src/Central/Entity'
+                        prefix: 'App\Central\Entity'
+                        alias: Central
+
+when@test:
+    doctrine:
+        dbal:
+            connections:
+                central:
+                    # "TEST_TOKEN" is typically set by ParaTest
+                    dbname_suffix: '_test%env(default::TEST_TOKEN)%'
+
+when@prod:
+    doctrine:
+        orm:
+            entity_managers:
+                central:
+                    query_cache_driver:
+                        type: pool
+                        pool: doctrine.system_cache_pool
+                    result_cache_driver:
+                        type: pool
+                        pool: doctrine.result_cache_pool
+
+    framework:
+        cache:
+            pools:
+                doctrine.result_cache_pool:
+                    adapter: cache.app
+                doctrine.system_cache_pool:
+                    adapter: cache.system

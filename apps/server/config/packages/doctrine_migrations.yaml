@@ -1,0 +1,8 @@
+doctrine_migrations:
+    # Central-only migrations pipeline (ADR-001). Tenant migrations get their own
+    # separate pipeline later; this namespace/directory is dedicated to central.
+    migrations_paths:
+        'App\Migrations\Central': '%kernel.project_dir%/migrations/central'
+    enable_profiler: false
+    # Bind this pipeline to the central EntityManager / connection.
+    em: central
