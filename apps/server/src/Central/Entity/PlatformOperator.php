@@ -44,6 +44,13 @@ class PlatformOperator
     #[ORM\Column(length: 255)]
     private string $displayName;
 
+    /**
+     * Hashed credential for platform authentication (ADR-007). Null until a
+     * password is set; a null hash can never authenticate.
+     */
+    #[ORM\Column(length: 255, nullable: true)]
+    private ?string $passwordHash = null;
+
     #[ORM\Column(type: Types::DATETIMETZ_IMMUTABLE)]
     private readonly \DateTimeImmutable $createdAt;
 
@@ -98,6 +105,16 @@ class PlatformOperator
     public function rename(string $displayName): void
     {
         $this->displayName = $displayName;
+    }
+
+    public function getPasswordHash(): ?string
+    {
+        return $this->passwordHash;
+    }
+
+    public function setPasswordHash(#[\SensitiveParameter] string $passwordHash): void
+    {
+        $this->passwordHash = $passwordHash;
     }
 
     /**

@@ -49,9 +49,10 @@ services:
     App\Tenant\Migration\TenantSchemaMigrator: '@App\Tenant\Migration\DoctrineTenantSchemaMigrator'
 
     # Back Office ports (ADR-002).
-    # Platform-operator authorization: deny-by-default until authentication (ADR-007)
-    # supplies a real operator authenticator. Fail closed.
-    App\BackOffice\Security\PlatformOperatorAuthorizer: '@App\BackOffice\Security\DenyByDefaultPlatformOperatorAuthorizer'
+    # Platform-operator authorization is decided from real platform authentication
+    # state (ADR-007): the security token must hold a platform operator. Still fails
+    # closed — no authenticated operator means no access.
+    App\BackOffice\Security\PlatformOperatorAuthorizer: '@App\BackOffice\Security\SecurityPlatformOperatorAuthorizer'
     # Audit is written to the central database via the default (central) manager.
     App\BackOffice\Audit\PlatformOperationAuditor: '@App\BackOffice\Audit\DoctrinePlatformOperationAuditor'
 

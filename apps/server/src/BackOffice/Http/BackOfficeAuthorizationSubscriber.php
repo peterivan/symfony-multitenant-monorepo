@@ -14,16 +14,24 @@ use Symfony\Component\HttpKernel\KernelEvents;
 
 /**
  * Authorizes every Back Office request through the platform-operator boundary only
- * (ADR-002).
+ * (ADR-002, ADR-007).
  *
- * Runs at kernel.request priority 14: after the Back Office boundary subscriber
- * (18) has guaranteed central-context entry. Access is decided SOLELY by the
- * {@see PlatformOperatorAuthorizer}; tenant context and tenant-local identity are
- * never consulted, so a tenant-local identity can neither grant access nor
- * auto-inherit platform-operator privileges. Non-operators fail closed with 403.
+ * Runs at kernel.request priority 6: after the platform firewall (8) has restored
+ * or established platform authentication state, so the decision reflects the real
+ * security token. Access is decided SOLELY by the {@see PlatformOperatorAuthorizer};
+ * tenant context and tenant-local identity are never consulted, so a tenant-local
+ * identity can neither grant access nor auto-inherit platform-operator privileges.
+ * The platform login check path stays reachable so operators can authenticate.
+ * Non-operators fail closed with 403.
  */
 final class BackOfficeAuthorizationSubscriber implements EventSubscriberInterface
 {
+    /**
+     * Route that must stay reachable without platform-operator authorization so
+     * operators can submit credentials.
+     */
+    private const string LOGIN_ROUTE = 'back_office_login';
+
     public function __construct(
         private readonly RouteBoundaryClassifier $classifier,
         private readonly PlatformOperatorAuthorizer $authorizer,
@@ -32,7 +40,7 @@ final class BackOfficeAuthorizationSubscriber implements EventSubscriberInterfac
     public static function getSubscribedEvents(): array
     {
         return [
-            KernelEvents::REQUEST => ['onKernelRequest', 14],
+            KernelEvents::REQUEST => ['onKernelRequest', 6],
         ];
     }
 
@@ -42,7 +50,13 @@ final class BackOfficeAuthorizationSubscriber implements EventSubscriberInterfac
             return;
         }
 
-        if (RouteBoundary::BackOffice !== $this->classifier->classifyRequest($event->getRequest())) {
+        $request = $event->getRequest();
+
+        if (RouteBoundary::BackOffice !== $this->classifier->classifyRequest($request)) {
+            return;
+        }
+
+        if (self::LOGIN_ROUTE === $request->attributes->get('_route')) {
             return;
         }
 

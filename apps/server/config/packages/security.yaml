@@ -1,0 +1,64 @@
+security:
+    # https://symfony.com/doc/current/security.html#registering-the-user-hashing-passwords
+    password_hashers:
+        Symfony\Component\Security\Core\User\PasswordAuthenticatedUserInterface: 'auto'
+
+    # Two boundary-bound providers, never a shared one (ADR-007). The platform
+    # provider reads only the central platform-owned store; the tenant provider
+    # reads only the tenant store selected by the resolved tenant context.
+    providers:
+        platform_operators:
+            id: App\Security\Platform\PlatformUserProvider
+        tenant_users:
+            id: App\Security\Tenant\TenantUserProvider
+
+    firewalls:
+        dev:
+            pattern: ^/(_profiler|_wdt|assets|build)/
+            security: false
+
+        # Platform authentication (central Back Office). Matched to /bo, runs in
+        # central context, requires no tenant resolution to enter. Isolated security
+        # context so platform state never grants tenant access.
+        platform:
+            pattern: ^/bo
+            provider: platform_operators
+            context: platform
+            json_login:
+                check_path: back_office_login
+                username_path: email
+                password_path: password
+
+        # Tenant authentication (tenant-facing). Matched by route boundary, after
+        # tenant resolution (TenantSubscriber prio 20) and the fail-closed tenant
+        # boundary. Isolated security context so tenant state never grants Back
+        # Office or another tenant.
+        tenant:
+            request_matcher: App\Security\Tenant\TenantFirewallRequestMatcher
+            provider: tenant_users
+            context: tenant
+            json_login:
+                check_path: tenant_login
+                username_path: email
+                password_path: password
+
+        # Central-platform and any other routes: anonymous, no authentication.
+        main:
+            lazy: true
+            provider: platform_operators
+
+    # Authorization for /bo is enforced by App\BackOffice\Http\BackOfficeAuthorizationSubscriber
+    # (after authentication) through the platform-operator seam; the login check
+    # path stays publicly reachable so operators can authenticate.
+    access_control:
+        - { path: ^/bo/login$, roles: PUBLIC_ACCESS }
+
+when@test:
+    security:
+        password_hashers:
+            # Reduce hashing cost in tests.
+            Symfony\Component\Security\Core\User\PasswordAuthenticatedUserInterface:
+                algorithm: auto
+                cost: 4
+                time_cost: 3
+                memory_cost: 10

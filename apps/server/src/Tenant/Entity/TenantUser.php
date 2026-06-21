@@ -49,6 +49,14 @@ class TenantUser
     private string $displayName;
 
     /**
+     * Hashed credential for tenant authentication (ADR-007), stored in this
+     * tenant's database only. Null until a password is set; a null hash can never
+     * authenticate.
+     */
+    #[ORM\Column(length: 255, nullable: true)]
+    private ?string $passwordHash = null;
+
+    /**
      * Tenant-local account-recovery state. Owned and changed entirely within the
      * tenant boundary; no central mirror, no cross-tenant coordination.
      */
@@ -128,6 +136,16 @@ class TenantUser
     public function rename(string $displayName): void
     {
         $this->displayName = $displayName;
+    }
+
+    public function getPasswordHash(): ?string
+    {
+        return $this->passwordHash;
+    }
+
+    public function setPasswordHash(#[\SensitiveParameter] string $passwordHash): void
+    {
+        $this->passwordHash = $passwordHash;
     }
 
     /**

@@ -26,7 +26,7 @@ use Symfony\Contracts\Service\ResetInterface;
  * exactly one tenant to one database and re-resolves when the active tenant
  * changes. Releases resources on reset (between requests / worker reuse).
  */
-final class TenantEntityManagerProvider implements ResetInterface
+class TenantEntityManagerProvider implements ResetInterface
 {
     private ?string $boundSlug = null;
 

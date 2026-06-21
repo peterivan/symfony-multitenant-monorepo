@@ -45,11 +45,11 @@ function bo_granting_authorizer(): PlatformOperatorAuthorizer
     };
 }
 
-it('runs before the firewall', function () {
+it('runs after the firewall so it can read real platform authentication state', function () {
     expect(BackOfficeAuthorizationSubscriber::getSubscribedEvents()[KernelEvents::REQUEST][1])
-        ->toBe(14)
-        ->and(14)
-        ->toBeGreaterThan(8);
+        ->toBe(6)
+        ->and(6)
+        ->toBeLessThan(8);
 });
 
 it('denies Back Office access by default (fail closed) until authentication exists', function () {
