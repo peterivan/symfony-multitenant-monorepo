@@ -39,18 +39,12 @@ class PlatformAuditEntry
     private readonly AuditOutcome $outcome;
 
     /**
-     * Platform-operator attribution. Nullable only because operator authentication
-     * lands in a later change (ADR-007); the column is populated once it does.
+     * Who acted, in which identity boundary, and in which tenant/operation scope
+     * (ADR-006). Embedded with bare column names (operator_reference, tenant_slug,
+     * identity_boundary, identity_reference, platform_operation_scope).
      */
-    #[ORM\Column(length: 255, nullable: true)]
-    private readonly ?string $operatorReference;
-
-    /**
-     * Selected tenant for tenant-scoped operations; null for central-only or
-     * cross-tenant operations that do not target a single tenant.
-     */
-    #[ORM\Column(length: 63, nullable: true)]
-    private readonly ?string $tenantSlug;
+    #[ORM\Embedded(class: AuditAttribution::class, columnPrefix: false)]
+    private readonly AuditAttribution $attribution;
 
     /**
      * Operation-specific scope details (affected ids, parameters, counts, ...).
@@ -75,8 +69,7 @@ class PlatformAuditEntry
         $this->category = $category;
         $this->operation = $operation;
         $this->outcome = $outcome;
-        $this->operatorReference = $attribution->operatorReference;
-        $this->tenantSlug = $attribution->tenantSlug;
+        $this->attribution = $attribution;
         $this->scope = $scope;
     }
 
@@ -105,14 +98,34 @@ class PlatformAuditEntry
         return $this->outcome;
     }
 
+    public function getAttribution(): AuditAttribution
+    {
+        return $this->attribution;
+    }
+
     public function getOperatorReference(): ?string
     {
-        return $this->operatorReference;
+        return $this->attribution->operatorReference;
     }
 
     public function getTenantSlug(): ?string
     {
-        return $this->tenantSlug;
+        return $this->attribution->tenantSlug;
+    }
+
+    public function getIdentityBoundary(): ?IdentityBoundary
+    {
+        return $this->attribution->identityBoundary;
+    }
+
+    public function getIdentityReference(): ?string
+    {
+        return $this->attribution->identityReference;
+    }
+
+    public function getPlatformOperationScope(): ?string
+    {
+        return $this->attribution->platformOperationScope;
     }
 
     /**
