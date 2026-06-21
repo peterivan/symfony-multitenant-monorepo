@@ -2,10 +2,15 @@
 <phpunit
     xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
     xsi:noNamespaceSchemaLocation="https://schema.phpunit.de/12.5/phpunit.xsd"
-    bootstrap="vendor/autoload.php"
+    bootstrap="tests/bootstrap.php"
     cacheDirectory=".phpunit.cache"
     colors="true"
 >
+    <php>
+        <!-- Required by KernelTestCase to locate the application kernel. -->
+        <server name="KERNEL_CLASS" value="App\Kernel" />
+    </php>
+
     <testsuites>
         <testsuite name="Application">
             <directory>tests</directory>
